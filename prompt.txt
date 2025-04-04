@@ -1,0 +1,177 @@
+I'd like you to write a Python script which does the following:
+
+ 1. Accepts a search term from the user.
+ 2. Searches the ArtIC API for exhibitions matching that term *and that have artwork titles*.
+ 3. Prompts the user for a number of exhibitions they would like to view.
+ 4. Displays the titles of the artwork for those exhibitions to the user.
+ 5. Loops until user exit.
+
+## Search API Background
+
+The Art Institute of Chicago (opens new window)'s API provides JSON-formatted data as a REST-style service that allows developers to explore and integrate the museum’s public data into their projects.
+
+For example, you can access the `/artworks` listing endpoint in our API by visiting the following URL to see all the published artworks in our collection:
+`https://api.artic.edu/api/v1/artworks`
+
+You can paginate through results using page and limit params:
+`https://api.artic.edu/api/v1/artworks?page=2&limit=100`
+
+If you want to search and filter the results, you can do so via our search endpoints. For example, here is a full-text search for all artworks whose metadata contains some mention of cats:
+`https://api.artic.edu/api/v1/artworks/search?q=cats`
+
+Here is the same search, but filtered to only show artworks that are in the public domain:
+`https://api.artic.edu/api/v1/artworks/search?q=cats&query[term][is_public_domain]=true`
+
+The data is returned as JSON. Our API accepts queries through both GET and POST.
+
+For production use, we recommend using GET and passing the entire query as minified URL-encoded JSON via the params parameter. For example:
+`https://api.artic.edu/api/v1/artworks/search?params=%7B%22q%22%3A%22cats%22%2C%22query%22%3A%7B%22term%22%3A%7B%22is_public_domain%22%3Atrue%7D%7D%7D`
+
+## Exhibitions Search API
+
+### `GET /exhibitions`
+
+A list of all exhibitions sorted by last updated date in descending order.
+
+#### Available parameters:
+`ids` - A comma-separated list of resource ids to retrieve
+`limit` - The number of resources to return per page
+`page` - The page of resources to retrieve
+`fields` - A comma-separated list of fields to return per resource
+`include` - A comma-separated list of subresource to embed in the returned resources. Available options are:
+ - `artworks`
+ - `sites`
+
+#### Example request: `https://api.artic.edu/api/v1/exhibitions?limit=2`:
+```json
+{
+    "pagination": {
+        "total": 6169,
+        "limit": 2,
+        "offset": 0,
+        "total_pages": 3085,
+        "current_page": 1,
+        "next_url": "https://api.artic.edu/api/v1/exhibitions?page=2&limit=2"
+    },
+    "data": [
+        {
+            "id": 3365,
+            "api_model": "exhibitions",
+            "api_link": "https://api.artic.edu/api/v1/exhibitions/3365",
+            "title": "John Massey: Cart\u00f3n de Venezuela",
+            "is_featured": false,
+            "position": -1,
+            ...
+        },
+        {
+            "id": 3251,
+            "api_model": "exhibitions",
+            "api_link": "https://api.artic.edu/api/v1/exhibitions/3251",
+            "title": "Four Followers of Caravaggio",
+            "is_featured": false,
+            "position": -1,
+            ...
+        }
+    ],
+    "info": {
+        "license_text": "The data in this response is licensed under a Creative Commons Zero (CC0) 1.0 designation and the Terms and Conditions of artic.edu.",
+        "license_links": [
+            "https://creativecommons.org/publicdomain/zero/1.0/",
+            "https://www.artic.edu/terms"
+        ],
+        "version": "1.13"
+    },
+    "config": {
+        "iiif_url": "https://www.artic.edu/iiif/2",
+        "website_url": "https://www.artic.edu"
+    }
+}
+```
+
+### `GET /exhibitions/search`
+
+Search exhibitions data in the aggregator.
+
+#### Available parameters:
+`q` - Your search query
+`query` - For complex queries, you can pass Elasticsearch domain syntax queries here
+`sort` - Used in conjunction with query
+`from` - Starting point of results. Pagination via Elasticsearch conventions
+`size` - Number of results to return. Pagination via Elasticsearch conventions
+`facets` - A comma-separated list of 'count' aggregation facets to include in the results.
+
+#### Example request: `https://api.artic.edu/api/v1/exhibitions/search`
+```json
+{
+    "preference": null,
+    "pagination": {
+        "total": 6505,
+        "limit": 10,
+        "offset": 0,
+        "total_pages": 651,
+        "current_page": 1
+    },
+    "data": [
+        {
+            "_score": 1,
+            "api_model": "exhibitions",
+            "api_link": "https://api.artic.edu/api/v1/exhibitions/1352",
+            "id": 1352,
+            "title": "Artful Alphabets: Five Picture Book Artists",
+            "timestamp": "2022-05-08T23:17:42-05:00"
+        },
+        {
+            "_score": 1,
+            "api_model": "exhibitions",
+            "api_link": "https://api.artic.edu/api/v1/exhibitions/1357",
+            "id": 1357,
+            "title": "June Wayne's Narrative Tapestries: Tidal Waves, DNA, and the Cosmos",
+            "timestamp": "2022-05-08T23:17:42-05:00"
+        },
+        {
+            "_score": 1,
+            "api_model": "exhibitions",
+            "api_link": "https://api.artic.edu/api/v1/exhibitions/1374",
+            "id": 1374,
+            "title": "Jindrich Heisler: Surrealism under Pressure",
+            "timestamp": "2022-05-08T23:17:42-05:00"
+        }
+    ],
+    "info": {
+        "license_text": "The data in this response is licensed under a Creative Commons Zero (CC0) 1.0 designation and the Terms and Conditions of artic.edu.",
+        "license_links": [
+            "https://creativecommons.org/publicdomain/zero/1.0/",
+            "https://www.artic.edu/terms"
+        ],
+        "version": "1.13"
+    },
+    "config": {
+        "iiif_url": "https://www.artic.edu/iiif/2",
+        "website_url": "http://www.artic.edu"
+    }
+}
+```
+
+## Python Template
+
+Please use the following for the final output code, including type hints whereever possible.
+The code should use the Python `requests` library and not use any other non-default libraries.
+Use simple GET requests, not POST requests, please. Make sure the code transparently and 
+automatically filters out exhibitions which lack artwork titles.
+
+For debugging purposes, neatly print the final URL used for each GET request.
+
+```python
+import requests
+from typing import List
+
+def search_exhibitions(term: str) -> list[int]:
+    '''Make a request to exhibitions/search for the search term,
+    using Elasticsearch `exists` option to only return results where the `artwork_titles` field is not empty
+    Process the result and return a list of exhibitions IDs.
+    '''
+    # TODO: Implement search
+
+def main():
+    # TODO: main function that repeatedly prompts the user and calls search
+```
